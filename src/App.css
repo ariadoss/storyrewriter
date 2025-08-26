@@ -356,6 +356,28 @@ body {
   height: 1.25rem;
 }
 
+.status-icon.completed {
+  color: #10b981;
+}
+
+.status-icon.processing {
+  color: #0ea5e9;
+  animation: spin 1s linear infinite;
+}
+
+.status-icon.regenerating {
+  color: #f59e0b;
+  animation: spin 1s linear infinite;
+}
+
+.status-icon.error {
+  color: #ef4444;
+}
+
+.status-icon.pending {
+  color: #64748b;
+}
+
 .spinning {
   animation: spin 1s linear infinite;
 }
@@ -513,6 +535,10 @@ body {
   background-color: #fef2f2;
 }
 
+.paragraph-comparison.regenerating {
+  background-color: #fef3c7;
+}
+
 .paragraph-number {
   display: flex;
   align-items: center;
@@ -584,6 +610,63 @@ body {
 .retry-info {
   font-size: 0.75rem;
   margin-top: 0.25rem;
+}
+
+/* Rewritten Content and Actions */
+.rewritten-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.paragraph-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Regenerate Button */
+.regenerate-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.regenerate-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.regenerate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.regenerate-button.regenerating {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  cursor: not-allowed;
+}
+
+.regenerate-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.regenerate-icon.spinning {
+  animation: spin 1s linear infinite;
 }
 
 .rewritten-text {

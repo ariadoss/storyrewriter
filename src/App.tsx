@@ -14,7 +14,8 @@ function App() {
     paragraphs: [],
     isProcessing: false,
     completedCount: 0,
-    totalCount: 0
+    totalCount: 0,
+    selectedModelId: undefined
   });
 
   const handleStorySubmit = useCallback(async (story: string, modelId: string) => {
@@ -26,7 +27,8 @@ function App() {
       paragraphs,
       isProcessing: true,
       completedCount: 0,
-      totalCount: paragraphs.length
+      totalCount: paragraphs.length,
+      selectedModelId: modelId
     });
 
     // Process paragraphs sequentially to avoid overwhelming the API
@@ -49,7 +51,7 @@ function App() {
           ...prevState,
           paragraphs: prevState.paragraphs.map(p =>
             p.id === paragraph.id
-              ? { ...p, status: 'completed', rewrittenText }
+              ? { ...p, status: 'completed', rewrittenText, modelId }
               : p
           ),
           completedCount: prevState.completedCount + 1
@@ -79,6 +81,53 @@ function App() {
     }));
   }, []);
 
+  const handleRegenerateParagraph = useCallback(async (paragraphId: string) => {
+    const paragraph = state.paragraphs.find(p => p.id === paragraphId);
+    if (!paragraph || !state.selectedModelId) {
+      return;
+    }
+
+    // Set paragraph status to regenerating
+    setState(prevState => ({
+      ...prevState,
+      paragraphs: prevState.paragraphs.map(p =>
+        p.id === paragraphId ? { ...p, status: 'regenerating' } : p
+      )
+    }));
+
+    try {
+      const rewrittenText = await openAIService.regenerateParagraph(
+        paragraph.originalText,
+        state.selectedModelId
+      );
+
+      // Update paragraph with new rewritten text
+      setState(prevState => ({
+        ...prevState,
+        paragraphs: prevState.paragraphs.map(p =>
+          p.id === paragraphId
+            ? { ...p, status: 'completed', rewrittenText, modelId: state.selectedModelId }
+            : p
+        )
+      }));
+    } catch (error) {
+      // Update paragraph with error
+      setState(prevState => ({
+        ...prevState,
+        paragraphs: prevState.paragraphs.map(p =>
+          p.id === paragraphId
+            ? {
+                ...p,
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                retryCount: p.retryCount + 1
+              }
+            : p
+        )
+      }));
+    }
+  }, [state.paragraphs, state.selectedModelId]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -97,7 +146,11 @@ function App() {
         ) : (
           <div className="processing-view">
             <ProgressTracker state={state} />
-            <ComparisonView paragraphs={state.paragraphs} />
+            <ComparisonView
+              paragraphs={state.paragraphs}
+              onRegenerateParagraph={handleRegenerateParagraph}
+              isProcessing={state.isProcessing}
+            />
             <CopyButton
               paragraphs={state.paragraphs}
               disabled={state.isProcessing}
@@ -110,7 +163,8 @@ function App() {
                   paragraphs: [],
                   isProcessing: false,
                   completedCount: 0,
-                  totalCount: 0
+                  totalCount: 0,
+                  selectedModelId: undefined
                 })}
                 className="reset-button"
                 disabled={state.isProcessing}

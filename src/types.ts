@@ -2,9 +2,10 @@ export interface Paragraph {
   id: string;
   originalText: string;
   rewrittenText?: string;
-  status: 'pending' | 'processing' | 'completed' | 'error';
+  status: 'pending' | 'processing' | 'completed' | 'error' | 'regenerating';
   error?: string;
   retryCount: number;
+  modelId?: string; // Track which model was used for this paragraph
 }
 
 export interface StoryRewriteState {
@@ -13,6 +14,7 @@ export interface StoryRewriteState {
   isProcessing: boolean;
   completedCount: number;
   totalCount: number;
+  selectedModelId?: string; // Track the currently selected model
 }
 
 export interface ModelConfig {

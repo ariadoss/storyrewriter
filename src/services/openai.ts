@@ -19,7 +19,7 @@ class OpenAIService {
     });
   }
 
-  async rewriteParagraph(text: string, modelId?: string, retryCount = 0): Promise<string> {
+  async rewriteParagraph(text: string, modelId?: string, retryCount = 0, isRegeneration = false): Promise<string> {
     let requestPromise: Promise<string> | null = null;
 
     try {
@@ -28,7 +28,7 @@ class OpenAIService {
         await Promise.race(this.requestQueue);
       }
 
-      requestPromise = this.makeRequest(text, modelId);
+      requestPromise = this.makeRequest(text, modelId, isRegeneration);
       this.requestQueue.push(requestPromise);
 
       const result = await requestPromise;
@@ -49,14 +49,14 @@ class OpenAIService {
       if (apiError.retryable && retryCount < this.maxRetries) {
         const delay = this.calculateDelay(retryCount);
         await this.sleep(delay);
-        return this.rewriteParagraph(text, modelId, retryCount + 1);
+        return this.rewriteParagraph(text, modelId, retryCount + 1, isRegeneration);
       }
 
       throw apiError;
     }
   }
 
-  private async makeRequest(text: string, modelId?: string): Promise<string> {
+  private async makeRequest(text: string, modelId?: string, isRegeneration = false): Promise<string> {
     // Get the model configuration
     const selectedModelId = modelId || CONFIG.defaultModel;
     const modelConfig = getModelById(CONFIG.models, selectedModelId);
@@ -65,12 +65,21 @@ class OpenAIService {
       throw new Error(`Model "${selectedModelId}" not found in configuration`);
     }
 
+    // Increase randomness for regeneration to get different results
+    const temperature = isRegeneration ? 1.0 : 0.7;
+    const topP = isRegeneration ? 0.9 : 1.0;
+
+    // Add a subtle variation to the system message for regeneration
+    const systemMessage = isRegeneration
+      ? `${modelConfig.systemMessage}\n\nPlease provide a fresh, alternative rewrite that differs from previous versions while maintaining the same quality and style.`
+      : modelConfig.systemMessage;
+
     const response = await this.client.chat.completions.create({
       model: modelConfig.id,
       messages: [
         {
           role: 'system',
-          content: modelConfig.systemMessage
+          content: systemMessage
         },
         {
           role: 'user',
@@ -78,7 +87,13 @@ class OpenAIService {
         }
       ],
       max_tokens: 1000,
-      temperature: 0.7
+      temperature,
+      top_p: topP,
+      // Add some randomness with presence_penalty for regeneration
+      ...(isRegeneration && {
+        presence_penalty: 0.3,
+        frequency_penalty: 0.3
+      })
     });
 
     const rewrittenText = response.choices[0]?.message?.content;
@@ -130,6 +145,13 @@ class OpenAIService {
 
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Regenerate a paragraph with increased randomness for variation
+   */
+  async regenerateParagraph(text: string, modelId?: string): Promise<string> {
+    return this.rewriteParagraph(text, modelId, 0, true);
   }
 
   /**

@@ -1,12 +1,19 @@
 import React from 'react';
 import { CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { RegenerateButton } from './RegenerateButton';
 import type { Paragraph } from '../types';
 
 interface ComparisonViewProps {
   paragraphs: Paragraph[];
+  onRegenerateParagraph: (paragraphId: string) => void;
+  isProcessing: boolean;
 }
 
-export const ComparisonView: React.FC<ComparisonViewProps> = ({ paragraphs }) => {
+export const ComparisonView: React.FC<ComparisonViewProps> = ({
+  paragraphs,
+  onRegenerateParagraph,
+  isProcessing
+}) => {
   if (paragraphs.length === 0) {
     return null;
   }
@@ -28,6 +35,8 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ paragraphs }) =>
             key={paragraph.id}
             paragraph={paragraph}
             index={index}
+            onRegenerateParagraph={onRegenerateParagraph}
+            isProcessing={isProcessing}
           />
         ))}
       </div>
@@ -38,15 +47,24 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ paragraphs }) =>
 interface ParagraphComparisonProps {
   paragraph: Paragraph;
   index: number;
+  onRegenerateParagraph: (paragraphId: string) => void;
+  isProcessing: boolean;
 }
 
-const ParagraphComparison: React.FC<ParagraphComparisonProps> = ({ paragraph, index }) => {
+const ParagraphComparison: React.FC<ParagraphComparisonProps> = ({
+  paragraph,
+  index,
+  onRegenerateParagraph,
+  isProcessing
+}) => {
   const getStatusIcon = () => {
     switch (paragraph.status) {
       case 'completed':
         return <CheckCircle className="status-icon completed" />;
       case 'processing':
         return <Loader2 className="status-icon processing" />;
+      case 'regenerating':
+        return <Loader2 className="status-icon regenerating" />;
       case 'error':
         return <AlertCircle className="status-icon error" />;
       default:
@@ -60,6 +78,8 @@ const ParagraphComparison: React.FC<ParagraphComparisonProps> = ({ paragraph, in
         return 'Completed';
       case 'processing':
         return 'Processing...';
+      case 'regenerating':
+        return 'Regenerating...';
       case 'error':
         return `Error${paragraph.retryCount > 0 ? ` (Retry ${paragraph.retryCount})` : ''}`;
       default:
@@ -92,7 +112,14 @@ const ParagraphComparison: React.FC<ParagraphComparisonProps> = ({ paragraph, in
                 <span>Rewriting paragraph...</span>
               </div>
             )}
-            
+
+            {paragraph.status === 'regenerating' && (
+              <div className="processing-placeholder">
+                <Loader2 className="processing-spinner" />
+                <span>Regenerating paragraph...</span>
+              </div>
+            )}
+
             {paragraph.status === 'error' && (
               <div className="error-placeholder">
                 <AlertCircle className="error-icon" />
@@ -102,13 +129,23 @@ const ParagraphComparison: React.FC<ParagraphComparisonProps> = ({ paragraph, in
                 )}
               </div>
             )}
-            
+
             {paragraph.status === 'completed' && paragraph.rewrittenText && (
-              <div className="rewritten-text">
-                {paragraph.rewrittenText}
+              <div className="rewritten-content">
+                <div className="rewritten-text">
+                  {paragraph.rewrittenText}
+                </div>
+                <div className="paragraph-actions">
+                  <RegenerateButton
+                    paragraphId={paragraph.id}
+                    isRegenerating={false}
+                    onRegenerate={onRegenerateParagraph}
+                    disabled={isProcessing}
+                  />
+                </div>
               </div>
             )}
-            
+
             {paragraph.status === 'pending' && (
               <div className="pending-placeholder">
                 <Clock className="pending-icon" />
