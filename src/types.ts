@@ -15,10 +15,16 @@ export interface StoryRewriteState {
   totalCount: number;
 }
 
+export interface ModelConfig {
+  id: string;
+  displayName: string;
+  systemMessage: string;
+}
+
 export interface OpenAIConfig {
   apiKey: string;
-  model: string;
-  systemMessage: string;
+  models: ModelConfig[];
+  defaultModel: string;
 }
 
 export interface APIError {

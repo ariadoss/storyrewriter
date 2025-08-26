@@ -17,7 +17,7 @@ function App() {
     totalCount: 0
   });
 
-  const handleStorySubmit = useCallback(async (story: string) => {
+  const handleStorySubmit = useCallback(async (story: string, modelId: string) => {
     const textSegments = splitIntoParagraphs(story);
     const paragraphs = createParagraphs(textSegments);
 
@@ -42,7 +42,7 @@ function App() {
       }));
 
       try {
-        const rewrittenText = await openAIService.rewriteParagraph(paragraph.originalText);
+        const rewrittenText = await openAIService.rewriteParagraph(paragraph.originalText, modelId);
 
         // Update paragraph with rewritten text
         setState(prevState => ({
@@ -91,6 +91,8 @@ function App() {
           <StoryInput
             onStorySubmit={handleStorySubmit}
             isProcessing={state.isProcessing}
+            availableModels={openAIService.getAvailableModels()}
+            defaultModelId={openAIService.getDefaultModelId()}
           />
         ) : (
           <div className="processing-view">

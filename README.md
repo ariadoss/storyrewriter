@@ -5,6 +5,7 @@ A TypeScript web application with an interface for story rewriting using a fine-
 ## Features
 
 - **Clean, Professional Interface**: Design with responsive layout
+- **Multiple Model Support**: Choose from different fine-tuned models for various rewriting styles
 - **Intelligent Text Processing**: Automatic paragraph splitting and processing
 - **Side-by-Side Comparison**: View original and rewritten text in parallel
 - **Progress Tracking**: Real-time progress indicators and status updates
@@ -36,8 +37,12 @@ A TypeScript web application with an interface for story rewriting using a fine-
    Create a `.env` file in the root directory with your OpenAI configuration:
    ```bash
    VITE_OPENAI_API_KEY=your_openai_api_key_here
-   VITE_OPENAI_MODEL=your_fine_tuned_model_id
-   VITE_SYSTEM_MESSAGE=your_system_message_here
+
+   # Model Configuration (multiple models supported)
+   VITE_MODELS=ft:gpt-4o-2024-08-06:blixo:danilo-wizard-v3:AJXIqSnY:danilo-wizard-v3:Your wizard system message|ft:gpt-4o-2024-08-06:blixo:danilomancer-v2:AIOzbE43:danilomancer-v2:Your danilomancer system message
+
+   # Default model (should match one of the model IDs above)
+   VITE_DEFAULT_MODEL=ft:gpt-4o-2024-08-06:blixo:danilo-wizard-v3:AJXIqSnY
    ```
 
 3. **Start the development server:**
@@ -57,20 +62,44 @@ npm run preview
 
 ## How to Use
 
-1. **Paste your story** into the text input area
-2. **Click "Rewrite Story"** or press Ctrl+Enter
-3. **Watch the progress** as each paragraph is processed
-4. **Review the side-by-side comparison** of original vs rewritten text
-5. **Copy or download** the complete rewritten story
+1. **Select your preferred rewriting style** from the dropdown (defaults to danilo-wizard-v3)
+2. **Paste your story** into the text input area
+3. **Click "Rewrite Story"** or press Ctrl+Enter
+4. **Watch the progress** as each paragraph is processed
+5. **Review the side-by-side comparison** of original vs rewritten text
+6. **Copy or download** the complete rewritten story
 
 ## API Configuration
 
-The application requires OpenAI API configuration through environment variables. Create a `.env` file in the root directory with:
+The application supports multiple fine-tuned models for different rewriting styles. Create a `.env` file in the root directory with:
+
+### New Multi-Model Configuration (Recommended)
+
+```bash
+VITE_OPENAI_API_KEY=your_openai_api_key
+
+# Model Configuration
+# Format: model_id:display_name:system_message|model_id:display_name:system_message
+VITE_MODELS=ft:gpt-4o-2024-08-06:blixo:danilo-wizard-v3:AJXIqSnY:danilo-wizard-v3:Your wizard system message|ft:gpt-4o-2024-08-06:blixo:danilomancer-v2:AIOzbE43:danilomancer-v2:Your danilomancer system message
+
+# Default model (should match one of the model IDs above)
+VITE_DEFAULT_MODEL=ft:gpt-4o-2024-08-06:blixo:danilo-wizard-v3:AJXIqSnY
+```
+
+### Legacy Single-Model Configuration (Still Supported)
 
 ```bash
 VITE_OPENAI_API_KEY=your_openai_api_key
 VITE_OPENAI_MODEL=your_fine_tuned_model_id
 VITE_SYSTEM_MESSAGE=your_system_instructions
+```
+
+### Adding New Models
+
+To add additional models, simply extend the `VITE_MODELS` environment variable:
+
+```bash
+VITE_MODELS=existing_models|new_model_id:New Model Name:New system message here
 ```
 
 **Note**: The `.env` file is automatically ignored by git to keep your API keys secure.
@@ -85,11 +114,12 @@ VITE_SYSTEM_MESSAGE=your_system_instructions
 - **API**: OpenAI GPT-4 fine-tuned model
 
 ### Key Components
-- `StoryInput`: Text input interface with validation
+- `StoryInput`: Text input interface with validation and model selection
+- `ModelSelector`: Dropdown component for choosing rewriting styles
 - `ComparisonView`: Side-by-side paragraph comparison
 - `ProgressTracker`: Real-time progress monitoring
 - `CopyButton`: Copy and download functionality
-- `OpenAIService`: API integration with error handling
+- `OpenAIService`: API integration with error handling and multi-model support
 
 ### Error Handling
 - Automatic retry logic (up to 5 attempts)

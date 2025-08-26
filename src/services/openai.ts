@@ -1,23 +1,9 @@
 import OpenAI from 'openai';
-import type { OpenAIConfig, APIError } from '../types';
+import type { OpenAIConfig, APIError, ModelConfig } from '../types';
+import { parseModelConfig, getModelById } from '../utils/modelConfig';
 
 // Configuration from environment variables
-const CONFIG: OpenAIConfig = {
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
-  model: import.meta.env.VITE_OPENAI_MODEL || '',
-  systemMessage: import.meta.env.VITE_SYSTEM_MESSAGE || ''
-};
-
-// Validate configuration
-if (!CONFIG.apiKey) {
-  throw new Error('VITE_OPENAI_API_KEY environment variable is required');
-}
-if (!CONFIG.model) {
-  throw new Error('VITE_OPENAI_MODEL environment variable is required');
-}
-if (!CONFIG.systemMessage) {
-  throw new Error('VITE_SYSTEM_MESSAGE environment variable is required');
-}
+const CONFIG: OpenAIConfig = parseModelConfig();
 
 class OpenAIService {
   private client: OpenAI;
@@ -33,7 +19,7 @@ class OpenAIService {
     });
   }
 
-  async rewriteParagraph(text: string, retryCount = 0): Promise<string> {
+  async rewriteParagraph(text: string, modelId?: string, retryCount = 0): Promise<string> {
     let requestPromise: Promise<string> | null = null;
 
     try {
@@ -42,7 +28,7 @@ class OpenAIService {
         await Promise.race(this.requestQueue);
       }
 
-      requestPromise = this.makeRequest(text);
+      requestPromise = this.makeRequest(text, modelId);
       this.requestQueue.push(requestPromise);
 
       const result = await requestPromise;
@@ -63,20 +49,28 @@ class OpenAIService {
       if (apiError.retryable && retryCount < this.maxRetries) {
         const delay = this.calculateDelay(retryCount);
         await this.sleep(delay);
-        return this.rewriteParagraph(text, retryCount + 1);
+        return this.rewriteParagraph(text, modelId, retryCount + 1);
       }
 
       throw apiError;
     }
   }
 
-  private async makeRequest(text: string): Promise<string> {
+  private async makeRequest(text: string, modelId?: string): Promise<string> {
+    // Get the model configuration
+    const selectedModelId = modelId || CONFIG.defaultModel;
+    const modelConfig = getModelById(CONFIG.models, selectedModelId);
+
+    if (!modelConfig) {
+      throw new Error(`Model "${selectedModelId}" not found in configuration`);
+    }
+
     const response = await this.client.chat.completions.create({
-      model: CONFIG.model,
+      model: modelConfig.id,
       messages: [
         {
           role: 'system',
-          content: CONFIG.systemMessage
+          content: modelConfig.systemMessage
         },
         {
           role: 'user',
@@ -137,6 +131,21 @@ class OpenAIService {
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+  /**
+   * Get available models
+   */
+  getAvailableModels(): ModelConfig[] {
+    return CONFIG.models;
+  }
+
+  /**
+   * Get default model ID
+   */
+  getDefaultModelId(): string {
+    return CONFIG.defaultModel;
+  }
 }
 
 export const openAIService = new OpenAIService();
+export { CONFIG as openAIConfig };

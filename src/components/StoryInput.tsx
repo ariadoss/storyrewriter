@@ -1,15 +1,25 @@
 import React, { useState, useCallback } from 'react';
 import { FileText, Upload, AlertCircle } from 'lucide-react';
 import { validateText, countWords, estimateReadingTime } from '../utils/textProcessing';
+import { ModelSelector } from './ModelSelector';
+import type { ModelConfig } from '../types';
 
 interface StoryInputProps {
-  onStorySubmit: (story: string) => void;
+  onStorySubmit: (story: string, modelId: string) => void;
   isProcessing: boolean;
+  availableModels: ModelConfig[];
+  defaultModelId: string;
 }
 
-export const StoryInput: React.FC<StoryInputProps> = ({ onStorySubmit, isProcessing }) => {
+export const StoryInput: React.FC<StoryInputProps> = ({
+  onStorySubmit,
+  isProcessing,
+  availableModels,
+  defaultModelId
+}) => {
   const [story, setStory] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState(defaultModelId);
 
   const handleStoryChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newStory = e.target.value;
@@ -25,7 +35,7 @@ export const StoryInput: React.FC<StoryInputProps> = ({ onStorySubmit, isProcess
     }
     
     setError(null);
-    onStorySubmit(story);
+    onStorySubmit(story, selectedModelId);
   }, [story, onStorySubmit]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -54,6 +64,13 @@ export const StoryInput: React.FC<StoryInputProps> = ({ onStorySubmit, isProcess
           )}
         </div>
       </div>
+
+      <ModelSelector
+        models={availableModels}
+        selectedModelId={selectedModelId}
+        onModelChange={setSelectedModelId}
+        disabled={isProcessing}
+      />
 
       <div className="input-container">
         <textarea
