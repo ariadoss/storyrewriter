@@ -101,18 +101,9 @@ VITE_SYSTEM_MESSAGE=your_system_instructions
 
 ⚠️ **Important Security Information**:
 
-1. **Environment Variables**: API keys are now stored in `.env` file which is excluded from git
+1. **Environment Variables**: API keys are stored in `.env` file which is excluded from git
 2. **Browser Security**: The API key is still exposed in the browser for development. For production, implement a backend proxy
-3. **Git History**: If you had API keys in previous commits, consider cleaning git history:
-   ```bash
-   # Remove sensitive data from git history (use with caution)
-   git filter-branch --force --index-filter \
-   'git rm --cached --ignore-unmatch README.md' \
-   --prune-empty --tag-name-filter cat -- --all
-
-   # Force push to update remote (WARNING: This rewrites history)
-   git push origin --force --all
-   ```
+3. **Clean Repository**: This repository has a clean git history with no sensitive data
 
 ## Development
 
